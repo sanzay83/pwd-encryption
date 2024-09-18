@@ -63,6 +63,75 @@ function Dashboard() {
     }
   };
 
+  const [company, setCompany] = useState("");
+  const [cUsername, setcUsername] = useState("");
+  const [cPassword, setcPassword] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
+
+  const handleAdd = () => {
+    setShowAdd(true);
+    setCompany("");
+    setcUsername("");
+    setcPassword("");
+  };
+
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=addrecord`,
+        {
+          username,
+          company,
+          cUsername,
+          cPassword,
+        }
+      );
+    } catch (e) {
+      console.log(e);
+    }
+
+    setCompany("");
+    setcUsername("");
+    setcPassword("");
+    setShowAdd(false);
+  };
+
+  const handleUpdate = (company, user, password) => {
+    setCompany(company);
+    setcUsername(user);
+    setcPassword(password);
+    setShowAdd(true);
+    setShowUpdate(true);
+  };
+
+  const handleUpdateRecord = async () => {
+    try {
+      const response = await axios.post(
+        `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=updaterecord`,
+        {
+          username,
+          company,
+          cUsername,
+          cPassword,
+        }
+      );
+    } catch (e) {
+      console.log(e);
+    }
+
+    setCompany("");
+    setcUsername("");
+    setcPassword("");
+    setShowAdd(false);
+    setShowUpdate(false);
+  };
+
+  const handleBack = () => {
+    setShowAdd(false);
+  };
+
   return (
     <>
       {loggedin ? (
@@ -74,41 +143,155 @@ function Dashboard() {
             </div>
           </div>
 
-          {data.length !== 0 ? (
-            <>
-              {data.map((each, index) => (
-                <div key={index} className="warning-general">
-                  <div className="confirm-div">
-                    <p>
-                      <strong>
-                        {index}. {each.company}
-                      </strong>
+          {showAdd ? (
+            <div className="warning-general">
+              <div className="confirm-div">
+                <div>
+                  {showUpdate ? (
+                    <strong>UPDATE ITEM</strong>
+                  ) : (
+                    <>
+                      <strong>ADD ITEM</strong>
+
                       <span>
-                        <strong>Username:</strong> {each.user}
+                        <div
+                          style={{
+                            textAlign: "left",
+                            fontSize: "15px",
+                            fontWeight: "bold",
+                            padding: "5px 0",
+                          }}
+                        >
+                          Company:
+                        </div>
+
+                        <input
+                          required=""
+                          className="input"
+                          type="text"
+                          value={company}
+                          onChange={(e) => setCompany(e.target.value)}
+                          placeholder="Company"
+                        />
                       </span>
-                      <span>
-                        <strong>Password:</strong> {each.password}
-                      </span>
-                    </p>
-                    <div className="modals-container">
-                      <button
-                        className="red-btn"
-                        onClick={() => handleDelete(each.company)}
-                      >
-                        Delete
-                      </button>
-                      <button className="green-btn">Update</button>
+                    </>
+                  )}
+
+                  <span>
+                    <div
+                      style={{
+                        textAlign: "left",
+                        fontSize: "15px",
+                        fontWeight: "bold",
+                        padding: "5px 0",
+                      }}
+                    >
+                      Username:
                     </div>
-                  </div>
+                    <input
+                      required=""
+                      className="input"
+                      type="text"
+                      value={cUsername}
+                      onChange={(e) => setcUsername(e.target.value)}
+                      placeholder="Username"
+                    />
+                  </span>
+                  <span>
+                    <div
+                      style={{
+                        textAlign: "left",
+                        fontSize: "15px",
+                        fontWeight: "bold",
+                        padding: "5px 0",
+                      }}
+                    >
+                      Password:
+                    </div>
+                    <input
+                      required=""
+                      className="input"
+                      type="text"
+                      value={cPassword}
+                      onChange={(e) => setcPassword(e.target.value)}
+                      placeholder="Password"
+                    />
+                  </span>
                 </div>
-              ))}
-            </>
-          ) : (
-            <div
-              style={{ textAlign: "center", padding: "20px", fontSize: "20px" }}
-            >
-              "No Data to Load."
+                <div className="modals-container">
+                  {showUpdate ? (
+                    <button className="green-btn" onClick={handleUpdateRecord}>
+                      UPDATE
+                    </button>
+                  ) : (
+                    <button className="green-btn" onClick={handleAddItem}>
+                      ADD
+                    </button>
+                  )}
+                  <button className="red-btn" onClick={handleBack}>
+                    CANCEL
+                  </button>
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              <button className="add-btn" onClick={handleAdd}>
+                ADD ITEM
+              </button>
+
+              {data.length !== 0 ? (
+                <>
+                  {data.map((each, index) => (
+                    <div key={index} className="warning-general">
+                      <div className="confirm-div">
+                        <div>
+                          <strong>
+                            {index}. {each.company}
+                          </strong>
+                          <span>
+                            <strong>Username:</strong> {each.user}
+                          </span>
+                          <span>
+                            <strong>Password:</strong> {each.password}
+                          </span>
+                        </div>
+                        <div className="modals-container">
+                          <button
+                            className="red-btn"
+                            onClick={() => handleDelete(each.company)}
+                          >
+                            Delete
+                          </button>
+                          <button
+                            className="green-btn"
+                            onClick={() =>
+                              handleUpdate(
+                                each.company,
+                                each.user,
+                                each.password
+                              )
+                            }
+                          >
+                            Update
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "20px",
+                    fontSize: "20px",
+                  }}
+                >
+                  "No Data to Load."
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : (

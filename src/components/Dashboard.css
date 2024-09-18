@@ -4,9 +4,26 @@
 
 .welcome-header {
   font-size: 25px;
+  min-width: 300px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+}
+
+.add-btn {
+  background-color: #47a04b;
+  width: 100%;
+  padding: 5px;
+  margin: 10px 0;
+  font-size: 16px;
+  font-weight: bold;
+  color: rgb(236, 233, 233);
+  border-radius: 6px;
+  box-shadow: 4px 4px 15px #3e3e3e;
+}
+
+.add-btn:hover {
+  background-color: #368339;
 }
 .confirm-div {
   background-color: #ccc;
@@ -48,7 +65,6 @@
 
 .confirm-div {
   font-size: 14px;
-
   width: 300px;
   padding: 20px;
   text-align: center;
@@ -60,21 +76,19 @@
 
 .confirm-div button {
   cursor: pointer;
-  width: 100%;
   padding: 4px 6px;
   border-radius: 4px;
   color: #fff;
   border: none;
   height: 30px;
-  width: 100%;
 }
 
-.confirm-div p {
+.confirm-div div {
   display: flex;
   flex-direction: column;
 }
 
-.confirm-div p strong {
+.confirm-div div strong {
   margin-bottom: 15px;
 }
 
@@ -86,10 +100,14 @@
 }
 
 .modals-container {
-  display: flex;
-  flex-direction: row;
   height: 32px;
-  margin-top: 20px;
+  margin: 20px 0;
   gap: 7px;
   width: 100%;
+}
+
+input {
+  border-radius: 5px;
+  width: 100%;
+  padding: 5px 0;
 }

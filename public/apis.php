@@ -54,16 +54,26 @@ switch ($endpoint) {
     $username = $input['username'];
     $password = $input['password'];
 
-    try {
-      $sql = "INSERT INTO `Users`(`username`, `password`) VALUES ('$username','$password')";
-      $conn->query($sql);
-      $sql = "INSERT INTO `token`(`username`, `token`) VALUES ('$username','none')";
-      $conn->query($sql);
-      http_response_code(200);
-      echo json_encode(["message" => "New user created."]);
-    } catch (error) {
-      http_response_code(404);
-      echo json_encode(["message" => "No users found."]);
+    $stmt = $conn->prepare("SELECT * FROM Users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows == 0) {
+      try {
+        $sql = "INSERT INTO `Users`(`username`, `password`) VALUES ('$username','$password')";
+        $conn->query($sql);
+        $sql = "INSERT INTO `token`(`username`, `token`) VALUES ('$username','none')";
+        $conn->query($sql);
+        http_response_code(200);
+        echo json_encode(["message" => "New user created."]);
+      } catch (error) {
+        http_response_code(404);
+        echo json_encode(["message" => "No users found."]);
+      }
+    } else {
+      http_response_code(400);
+      echo json_encode(["message" => "User already exists."]);
     }
     break;
 
@@ -79,12 +89,13 @@ switch ($endpoint) {
       http_response_code(400);
       echo json_encode(["message" => "Error while signing out"]);
     }
+    break;
 
   case 'addrecord':
     $username = $input['username'];
     $company = $input['company'];
-    $cuser = $input['cuser'];
-    $cpassword = $input['cpassword'];
+    $cuser = $input['cUsername'];
+    $cpassword = $input['cPassword'];
     $token = $input['token'];
 
     try {
@@ -95,6 +106,24 @@ switch ($endpoint) {
     } catch (error) {
       http_response_code(404);
       echo json_encode(["message" => "Record adding failed."]);
+    }
+    break;
+
+  case 'updaterecord':
+    $username = $input['username'];
+    $company = $input['company'];
+    $cuser = $input['cUsername'];
+    $cpassword = $input['cPassword'];
+    $token = $input['token'];
+
+    try {
+      $sql = "UPDATE `manager` SET `user`='$cuser',`password`='$cpassword' WHERE `username`='$username' AND `company`='$company'";
+      $conn->query($sql);
+      http_response_code(200);
+      echo json_encode(["message" => "Record updated successfully."]);
+    } catch (error) {
+      http_response_code(404);
+      echo json_encode(["message" => "Record updating failed."]);
     }
     break;
 

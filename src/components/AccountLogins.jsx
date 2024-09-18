@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { API_URL } from "./config";
 import { useNavigate } from "react-router-dom";
 
 function AccountLogins() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [create, setCreate] = useState(false);
+  const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
 
@@ -48,6 +48,7 @@ function AccountLogins() {
             password,
           }
         );
+        setMessage(response.data.message);
         setCreate(false);
       }
     } catch (e) {
@@ -90,6 +91,11 @@ function AccountLogins() {
           <span className="create-user">
             No Account? <a onClick={handleCreate}>Create One Here.</a>
           </span>
+          <div
+            style={{ fontSize: "25px", padding: "10px", textAlign: "center" }}
+          >
+            {message ? message : ""}
+          </div>
         </div>
       ) : (
         <div className="container">
