@@ -85,6 +85,7 @@ switch ($endpoint) {
     $company = $input['company'];
     $cuser = $input['cuser'];
     $cpassword = $input['cpassword'];
+    $token = $input['token'];
 
     try {
       $sql = "INSERT INTO `manager`(`username`,`company`,`user`, `password`) VALUES ('$username','$company','$cuser','$cpassword')";
@@ -96,6 +97,46 @@ switch ($endpoint) {
       echo json_encode(["message" => "Record adding failed."]);
     }
     break;
+
+  case 'retrieverecord':
+    $username = $input['username'];
+    $stmt = $conn->prepare("SELECT * FROM manager WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+      $record = [];
+      while ($row = $result->fetch_assoc()) {
+        $record[] = $row;
+      }
+    }
+
+    try {
+      http_response_code(200);
+      echo json_encode($record);
+    } catch (error) {
+      http_response_code(404);
+      echo json_encode(["message" => "Error retriving records."]);
+    }
+    break;
+
+
+  case 'deleterecord':
+    $username = $input['username'];
+    $company = $input['company'];
+    $sql = "DELETE FROM `manager` WHERE username='$username' AND company='$company'";
+
+    try {
+      $conn->query($sql);
+      http_response_code(200);
+      echo json_encode(["message" => "Record successfully deleted."]);
+    } catch (error) {
+      http_response_code(404);
+      echo json_encode(["message" => "Error retriving records."]);
+    }
+    break;
+
+
 
   default:
     http_response_code(400); // Bad request for invalid endpoint

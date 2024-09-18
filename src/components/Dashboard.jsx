@@ -1,14 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSignOutAlt } from "react-icons/fa";
 import axios from "axios";
 
 function Dashboard() {
   const loggedin = localStorage.getItem("loggedIn");
-  const [data, setData] = useState(["", "", "", "", "", "", "", ""]);
+  const [data, setData] = useState([]);
   const username = localStorage.getItem("username");
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.post(
+          `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=retrieverecord`,
+          {
+            username,
+          }
+        );
+
+        if (response.data) {
+          setData(response.data);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleSignOut = async (e) => {
     e.preventDefault();
@@ -28,6 +48,21 @@ function Dashboard() {
     localStorage.setItem("token", "");
     navigate("/");
   };
+
+  const handleDelete = async (company) => {
+    try {
+      const response = await axios.post(
+        `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=deleterecord`,
+        {
+          username,
+          company,
+        }
+      );
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   return (
     <>
       {loggedin ? (
@@ -38,25 +73,43 @@ function Dashboard() {
               <FaSignOutAlt />
             </div>
           </div>
-          {data.map((each, index) => (
-            <div className="warning-general">
-              <div className="confirm-div">
-                <p>
-                  <strong>{index}. Facebook</strong>
-                  <span>
-                    <strong>Username:</strong> SanjayDuwal
-                  </span>
-                  <span>
-                    <strong>Password:</strong> Password
-                  </span>
-                </p>
-                <div className="modals-container">
-                  <button className="red-btn">Delete</button>
-                  <button className="green-btn">Update</button>
+
+          {data.length !== 0 ? (
+            <>
+              {data.map((each, index) => (
+                <div key={index} className="warning-general">
+                  <div className="confirm-div">
+                    <p>
+                      <strong>
+                        {index}. {each.company}
+                      </strong>
+                      <span>
+                        <strong>Username:</strong> {each.user}
+                      </span>
+                      <span>
+                        <strong>Password:</strong> {each.password}
+                      </span>
+                    </p>
+                    <div className="modals-container">
+                      <button
+                        className="red-btn"
+                        onClick={() => handleDelete(each.company)}
+                      >
+                        Delete
+                      </button>
+                      <button className="green-btn">Update</button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
+            </>
+          ) : (
+            <div
+              style={{ textAlign: "center", padding: "20px", fontSize: "20px" }}
+            >
+              "No Data to Load."
             </div>
-          ))}
+          )}
         </div>
       ) : (
         "You are not Signed In! Please Sign In First."
