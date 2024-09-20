@@ -17,7 +17,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $endpoint = isset($_GET['endpoint']) ? $_GET['endpoint'] : '';
 $input = json_decode(file_get_contents('php://input'), true);
 
+function verifyToken($conn, $username, $token)
+{
+  $stmt = $conn->prepare("SELECT * FROM token WHERE username = ?");
+  $stmt->bind_param("s", $username);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result->num_rows > 0) {
+    $users = [];
+    while ($row = $result->fetch_assoc()) {
+      $users[] = $row;
+    }
+  }
+
+  if ($token === $users[0]['token']) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 switch ($endpoint) {
+  case 'test':
+    $username = $input['username'];
+    $token = $input['token'];
+    if (verifyToken($conn, $username, $token)) {
+      echo "Verified";
+    } else {
+      echo "Not";
+    };
+    break;
+
   case 'user':
     $username = $input['username'];
     $password = $input['password'];
@@ -98,14 +128,19 @@ switch ($endpoint) {
     $cpassword = $input['cPassword'];
     $token = $input['token'];
 
-    try {
-      $sql = "INSERT INTO `manager`(`username`,`company`,`user`, `password`) VALUES ('$username','$company','$cuser','$cpassword')";
-      $conn->query($sql);
-      http_response_code(200);
-      echo json_encode(["message" => "Record added successfully."]);
-    } catch (error) {
+    if (verifyToken($conn, $username, $token)) {
+      try {
+        $sql = "INSERT INTO `manager`(`username`,`company`,`user`, `password`) VALUES ('$username','$company','$cuser','$cpassword')";
+        $conn->query($sql);
+        http_response_code(200);
+        echo json_encode(["message" => "Record added successfully."]);
+      } catch (error) {
+        http_response_code(404);
+        echo json_encode(["message" => "Record adding failed."]);
+      }
+    } else {
       http_response_code(404);
-      echo json_encode(["message" => "Record adding failed."]);
+      echo json_encode(["message" => "Token Validation failed."]);
     }
     break;
 
@@ -116,36 +151,47 @@ switch ($endpoint) {
     $cpassword = $input['cPassword'];
     $token = $input['token'];
 
-    try {
-      $sql = "UPDATE `manager` SET `user`='$cuser',`password`='$cpassword' WHERE `username`='$username' AND `company`='$company'";
-      $conn->query($sql);
-      http_response_code(200);
-      echo json_encode(["message" => "Record updated successfully."]);
-    } catch (error) {
+    if (verifyToken($conn, $username, $token)) {
+      try {
+        $sql = "UPDATE `manager` SET `user`='$cuser',`password`='$cpassword' WHERE `username`='$username' AND `company`='$company'";
+        $conn->query($sql);
+        http_response_code(200);
+        echo json_encode(["message" => "Record updated successfully."]);
+      } catch (error) {
+        http_response_code(404);
+        echo json_encode(["message" => "Record updating failed."]);
+      }
+    } else {
       http_response_code(404);
-      echo json_encode(["message" => "Record updating failed."]);
+      echo json_encode(["message" => "Token Validation failed."]);
     }
     break;
 
   case 'retrieverecord':
     $username = $input['username'];
-    $stmt = $conn->prepare("SELECT * FROM manager WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-      $record = [];
-      while ($row = $result->fetch_assoc()) {
-        $record[] = $row;
+    $token = $input['token'];
+    if (verifyToken($conn, $username, $token)) {
+      $stmt = $conn->prepare("SELECT * FROM manager WHERE username = ?");
+      $stmt->bind_param("s", $username);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      if ($result->num_rows > 0) {
+        $record = [];
+        while ($row = $result->fetch_assoc()) {
+          $record[] = $row;
+        }
       }
-    }
 
-    try {
-      http_response_code(200);
-      echo json_encode($record);
-    } catch (error) {
+      try {
+        http_response_code(200);
+        echo json_encode($record);
+      } catch (error) {
+        http_response_code(404);
+        echo json_encode(["message" => "Error retriving records."]);
+      }
+    } else {
       http_response_code(404);
-      echo json_encode(["message" => "Error retriving records."]);
+      echo json_encode(["message" => "Token Validation failed."]);
     }
     break;
 
@@ -153,15 +199,21 @@ switch ($endpoint) {
   case 'deleterecord':
     $username = $input['username'];
     $company = $input['company'];
-    $sql = "DELETE FROM `manager` WHERE username='$username' AND company='$company'";
+    $token = $input['token'];
+    if (verifyToken($conn, $username, $token)) {
+      $sql = "DELETE FROM `manager` WHERE username='$username' AND company='$company'";
 
-    try {
-      $conn->query($sql);
-      http_response_code(200);
-      echo json_encode(["message" => "Record successfully deleted."]);
-    } catch (error) {
+      try {
+        $conn->query($sql);
+        http_response_code(200);
+        echo json_encode(["message" => "Record successfully deleted."]);
+      } catch (error) {
+        http_response_code(404);
+        echo json_encode(["message" => "Error retriving records."]);
+      }
+    } else {
       http_response_code(404);
-      echo json_encode(["message" => "Error retriving records."]);
+      echo json_encode(["message" => "Token Validation failed."]);
     }
     break;
 

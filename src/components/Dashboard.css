@@ -1,5 +1,8 @@
 .main-container {
-  margin: 50px 0;
+  margin: 30px 0;
+  padding: 15px;
+  border-radius: 15px;
+  background-color: #ccc;
 }
 
 .welcome-header {
@@ -67,7 +70,7 @@
   font-size: 14px;
   width: 300px;
   padding: 20px;
-  text-align: center;
+  text-align: left;
   border-radius: 6px;
   box-shadow: 4px 4px 15px #3e3e3e;
   font-family: "Segoe UI", Tahoma, sans-serif;
@@ -90,6 +93,7 @@
 
 .confirm-div div strong {
   margin-bottom: 15px;
+  font-size: 20px;
 }
 
 .warning-general {
@@ -110,4 +114,16 @@ input {
   border-radius: 5px;
   width: 100%;
   padding: 5px 0;
+}
+
+.updatedeletebutton {
+  width: 100%;
+}
+
+.hideCase {
+  visibility: hidden;
+}
+
+.confirm-div:hover .hideCase {
+  visibility: visible;
 }

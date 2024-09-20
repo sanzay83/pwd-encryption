@@ -2,39 +2,63 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSignOutAlt } from "react-icons/fa";
 import axios from "axios";
+import CryptoJS from "crypto-js";
+import { masterKey } from "../config";
 
 function Dashboard() {
-  const loggedin = localStorage.getItem("loggedIn");
+  const [loggedin, setLoggedin] = useState(false);
   const [data, setData] = useState([]);
+  const [message, setMessage] = useState("");
+  const [modify, setModify] = useState(false);
+  const [loading, setLoading] = useState(false);
   const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.post(
-          `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=retrieverecord`,
-          {
-            username,
-          }
-        );
+  const encryptText = (text, key) => {
+    return CryptoJS.AES.encrypt(text, key).toString();
+  };
 
-        if (response.data) {
-          setData(response.data);
+  const decryptText = (text, key) => {
+    const bytes = CryptoJS.AES.decrypt(text, key);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  };
+
+  useEffect(() => {
+    if (token !== "") {
+      setLoggedin(true);
+
+      const fetchData = async () => {
+        try {
+          const response = await axios.post(
+            `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=retrieverecord`,
+            {
+              username,
+              token,
+            }
+          );
+
+          if (response.data) {
+            setData(response.data);
+          } else {
+            setMessage("No data to load");
+          }
+          setLoading(false);
+        } catch (e) {
+          setMessage("Please Log In!");
+          setLoading(false);
         }
-      } catch (e) {
-        console.log(e);
-      }
-    };
-    fetchData();
-  }, []);
+      };
+      fetchData();
+    }
+  }, [username, token, loading]);
 
   const handleSignOut = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=signout`,
         {
           username,
@@ -43,7 +67,7 @@ function Dashboard() {
     } catch (e) {
       console.log(e);
     }
-    localStorage.setItem("loggedIn", false);
+    setLoggedin(false);
     localStorage.setItem("username", "");
     localStorage.setItem("token", "");
     navigate("/");
@@ -51,79 +75,90 @@ function Dashboard() {
 
   const handleDelete = async (company) => {
     try {
-      const response = await axios.post(
+      await axios.post(
         `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=deleterecord`,
         {
           username,
           company,
+          token,
         }
       );
+      setLoading(true);
     } catch (e) {
       console.log(e);
     }
   };
 
   const [company, setCompany] = useState("");
-  const [cUsername, setcUsername] = useState("");
-  const [cPassword, setcPassword] = useState("");
+  const [compUsername, setcompUsername] = useState("");
+  const [compPassword, setcompPassword] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
 
   const handleAdd = () => {
     setShowAdd(true);
     setCompany("");
-    setcUsername("");
-    setcPassword("");
+    setcompUsername("");
+    setcompPassword("");
   };
 
   const handleAddItem = async (e) => {
     e.preventDefault();
+    const cUsername = encryptText(compUsername, masterKey);
+    const cPassword = encryptText(compPassword, masterKey);
+
     try {
-      const response = await axios.post(
+      await axios.post(
         `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=addrecord`,
         {
           username,
           company,
           cUsername,
           cPassword,
+          token,
         }
       );
+      setLoading(true);
     } catch (e) {
       console.log(e);
     }
 
     setCompany("");
-    setcUsername("");
-    setcPassword("");
+    setcompUsername("");
+    setcompPassword("");
     setShowAdd(false);
   };
 
   const handleUpdate = (company, user, password) => {
     setCompany(company);
-    setcUsername(user);
-    setcPassword(password);
+    setcompUsername(decryptText(user, masterKey));
+    setcompPassword(decryptText(password, masterKey));
     setShowAdd(true);
     setShowUpdate(true);
   };
 
   const handleUpdateRecord = async () => {
     try {
-      const response = await axios.post(
+      const cUsername = encryptText(compUsername, masterKey);
+      const cPassword = encryptText(compPassword, masterKey);
+      await axios.post(
         `https://sanjayduwal.com/encrypt/php/apis.php?endpoint=updaterecord`,
         {
           username,
           company,
           cUsername,
           cPassword,
+          token,
         }
       );
+      setLoading(true);
     } catch (e) {
       console.log(e);
     }
 
     setCompany("");
-    setcUsername("");
-    setcPassword("");
+    setcompUsername("");
+    setcompPassword("");
     setShowAdd(false);
     setShowUpdate(false);
   };
@@ -132,6 +167,9 @@ function Dashboard() {
     setShowAdd(false);
   };
 
+  const handleModify = () => {
+    setModify(true);
+  };
   return (
     <>
       {loggedin ? (
@@ -148,7 +186,10 @@ function Dashboard() {
               <div className="confirm-div">
                 <div>
                   {showUpdate ? (
-                    <strong>UPDATE ITEM</strong>
+                    <>
+                      <strong>UPDATE ITEM</strong>
+                      <span>Company: {company}</span>
+                    </>
                   ) : (
                     <>
                       <strong>ADD ITEM</strong>
@@ -192,8 +233,8 @@ function Dashboard() {
                       required=""
                       className="input"
                       type="text"
-                      value={cUsername}
-                      onChange={(e) => setcUsername(e.target.value)}
+                      value={compUsername}
+                      onChange={(e) => setcompUsername(e.target.value)}
                       placeholder="Username"
                     />
                   </span>
@@ -212,8 +253,8 @@ function Dashboard() {
                       required=""
                       className="input"
                       type="text"
-                      value={cPassword}
-                      onChange={(e) => setcPassword(e.target.value)}
+                      value={compPassword}
+                      onChange={(e) => setcompPassword(e.target.value)}
                       placeholder="Password"
                     />
                   </span>
@@ -246,35 +287,69 @@ function Dashboard() {
                     <div key={index} className="warning-general">
                       <div className="confirm-div">
                         <div>
-                          <strong>
-                            {index}. {each.company}
-                          </strong>
-                          <span>
-                            <strong>Username:</strong> {each.user}
-                          </span>
-                          <span>
-                            <strong>Password:</strong> {each.password}
-                          </span>
+                          <strong>{each.company}</strong>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "10px",
+                            }}
+                          >
+                            <b>Username:</b>{" "}
+                            <div className="hideCase">
+                              {decryptText(each.user, masterKey)}
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "10px",
+                            }}
+                          >
+                            <b> Password:</b>{" "}
+                            <div className="hideCase">
+                              {decryptText(each.password, masterKey)}
+                            </div>
+                          </div>
                         </div>
-                        <div className="modals-container">
-                          <button
-                            className="red-btn"
-                            onClick={() => handleDelete(each.company)}
-                          >
-                            Delete
-                          </button>
-                          <button
-                            className="green-btn"
-                            onClick={() =>
-                              handleUpdate(
-                                each.company,
-                                each.user,
-                                each.password
-                              )
-                            }
-                          >
-                            Update
-                          </button>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "10px",
+                            marginTop: "10px",
+                          }}
+                        >
+                          {modify ? (
+                            <>
+                              <button
+                                className="green-btn updatedeletebutton"
+                                onClick={() =>
+                                  handleUpdate(
+                                    each.company,
+                                    each.user,
+                                    each.password
+                                  )
+                                }
+                              >
+                                Update
+                              </button>
+                              <button
+                                className="red-btn updatedeletebutton"
+                                onClick={() => handleDelete(each.company)}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="green-btn updatedeletebutton"
+                              onClick={() => handleModify()}
+                            >
+                              MODIFY
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -288,7 +363,7 @@ function Dashboard() {
                     fontSize: "20px",
                   }}
                 >
-                  "No Data to Load."
+                  {message}
                 </div>
               )}
             </>

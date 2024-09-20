@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import CryptoJS from "crypto-js";
+import { IoArrowBackSharp } from "react-icons/io5";
 
 function AccountLogins() {
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [userPassword, setuserPassword] = useState("");
   const [create, setCreate] = useState(false);
   const [message, setMessage] = useState("");
 
   const navigate = useNavigate();
 
+  const encryptText = (text) => {
+    return CryptoJS.SHA256(text).toString();
+  };
+
   const handleSignIn = async (e) => {
     e.preventDefault();
+    const password = encryptText(userPassword);
 
     try {
       const response = await axios.post(
@@ -23,7 +30,6 @@ function AccountLogins() {
       );
       if (response) {
         localStorage.setItem("username", username);
-        localStorage.setItem("loggedIn", true);
         localStorage.setItem("token", response.data.token);
         navigate("/dashboard");
       }
@@ -36,8 +42,14 @@ function AccountLogins() {
     setCreate(true);
   };
 
+  const handleCancel = () => {
+    setCreate(false);
+  };
+
   const handleCreateButton = async (e) => {
     e.preventDefault();
+
+    const password = encryptText(userPassword);
 
     try {
       if (username && password) {
@@ -74,14 +86,12 @@ function AccountLogins() {
               required=""
               className="input"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={userPassword}
+              onChange={(e) => setuserPassword(e.target.value)}
               placeholder="Password"
             />
           </div>
-          <span className="forgot-password">
-            <a href="#">Forgot Password ?</a>
-          </span>
+
           <input
             className="login-button"
             type="submit"
@@ -89,7 +99,13 @@ function AccountLogins() {
             onClick={handleSignIn}
           />
           <span className="create-user">
-            No Account? <a onClick={handleCreate}>Create One Here.</a>
+            No Account?{" "}
+            <div
+              style={{ fontSize: "15px", color: "#0099ff", cursor: "pointer" }}
+              onClick={handleCreate}
+            >
+              Create One Here.
+            </div>
           </span>
           <div
             style={{ fontSize: "25px", padding: "10px", textAlign: "center" }}
@@ -99,7 +115,21 @@ function AccountLogins() {
         </div>
       ) : (
         <div className="container">
-          <div className="heading">Create Account</div>
+          <div className="create-header">
+            <div
+              style={{
+                fontSize: "30px",
+                color: "rgb(16, 137, 211)",
+                cursor: "pointer",
+              }}
+              className="cancel-button"
+              onClick={handleCancel}
+            >
+              <IoArrowBackSharp />
+            </div>
+            <div className="heading">Create Account</div>
+          </div>
+
           <div className="form">
             <input
               required=""
@@ -113,8 +143,8 @@ function AccountLogins() {
               required=""
               className="input"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={userPassword}
+              onChange={(e) => setuserPassword(e.target.value)}
               placeholder="Password"
             />
           </div>
